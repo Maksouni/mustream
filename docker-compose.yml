@@ -55,7 +55,6 @@ services:
     # Use VPS provider DNS servers reachable from this network.
     dns:
       - 188.120.247.2
-      - 188.120.247.8
     ports:
       - "80:80"
       - "443:443"
