@@ -1,0 +1,71 @@
+services:
+  navidrome:
+    image: deluan/navidrome:latest
+    restart: unless-stopped
+    ports:
+      # Localhost only: use SSH -L 4533:127.0.0.1:4533 for first-time setup from another machine
+      - "127.0.0.1:4533:4533"
+    environment:
+      ND_SCANSCHEDULE: 1h
+      ND_LOGLEVEL: info
+      ND_SESSIONTIMEOUT: 24h
+      # Set MUSTREAM_PUBLIC_URL in .env for public HTTPS (and Tailscale); see README.
+      ND_BASEURL: ${MUSTREAM_PUBLIC_URL:-}
+    volumes:
+      - ./music:/music:ro
+      - navidrome_data:/data
+
+  upload:
+    build:
+      context: ./services/upload
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      MUSIC_DIR: /music
+      NAVIDROME_URL: http://navidrome:4533
+    volumes:
+      - ./music:/music
+    depends_on:
+      - navidrome
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - navidrome
+      - upload
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # TLS termination + Let's Encrypt. Requires .env with MUSTREAM_DOMAIN. Run:
+  #   docker compose --profile https up -d
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["https"]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # Required for a real deploy: set MUSTREAM_DOMAIN in .env (see .env.example).
+      MUSTREAM_DOMAIN: ${MUSTREAM_DOMAIN:-}
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+
+volumes:
+  navidrome_data:
+  caddy_data:
+  caddy_config:

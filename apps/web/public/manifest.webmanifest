@@ -1,0 +1,9 @@
+{
+  "name": "mustream",
+  "short_name": "mustream",
+  "description": "Local Navidrome web player",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#faf8fc",
+  "theme_color": "#1a1523"
+}

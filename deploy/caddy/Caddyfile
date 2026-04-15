@@ -1,0 +1,8 @@
+# Public HTTPS: set MUSTREAM_DOMAIN and MUSTREAM_PUBLIC_URL in .env (see .env.example),
+# then: docker compose --profile https up -d
+#
+# Uses Let's Encrypt (HTTP-01). Ports 80 and 443 must reach this host from the internet.
+
+{$MUSTREAM_DOMAIN} {
+	reverse_proxy web:80
+}
